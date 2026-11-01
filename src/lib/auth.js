@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'vincent@vintage2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '180055';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'vv-secret-atelier-auth-key-2026-v1';
 const COOKIE_NAME = 'vv_admin_session';
 
