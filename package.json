@@ -1,0 +1,29 @@
+{
+  "name": "vincent-and-vintage",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "@neon/config": "^1.10.0",
+    "@neon/env": "^1.6.8",
+    "@neondatabase/serverless": "^0.10.4",
+    "cloudinary": "^2.11.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^1.16.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "postcss": "^8.5.3",
+    "potrace": "^2.1.8",
+    "tailwindcss": "^4.1.0"
+  }
+}
