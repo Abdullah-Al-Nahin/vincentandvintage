@@ -701,16 +701,28 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteProduct = async (id) => {
+  const handleDeleteProduct = async (id, name = 'this piece') => {
     if (
       !confirm(
-        'Are you sure you want to permanently delete this product SKU? (Tip: You can simply uncheck the checkbox to hide it without deleting!)'
+        `Are you sure you want to permanently delete "${name}" from your database? This will completely remove the product, inventory records, and images.`
       )
     )
       return;
-    await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
-    notify('Product deleted from database.');
-    loadAll();
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Failed to delete product.');
+      }
+      notify(`Product "${name}" removed completely.`);
+      setStockEditModal(null);
+      await loadAll();
+    } catch (err) {
+      notify(`Delete failed: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // ========================================================
@@ -1777,27 +1789,37 @@ export default function AdminDashboardPage() {
 
                             {/* Actions */}
                             <td className="py-3.5 px-4 text-right">
-                              <button
-                                onClick={() =>
-                                  setStockEditModal({
-                                    id: p.id,
-                                    name: p.name,
-                                    sku: p.sku,
-                                    inventoryType: p.inventoryType || 'sizes',
-                                    totalStock: p.totalStock,
-                                    lowStockThreshold: p.lowStockThreshold || 5,
-                                    colors: Array.isArray(p.colors) && p.colors.length > 0
-                                      ? JSON.parse(JSON.stringify(p.colors))
-                                      : [{ name: 'Standard', hex: '#212121', stock: p.totalStock, sizes: p.sizes || [] }],
-                                    sizes: Array.isArray(p.sizes) ? JSON.parse(JSON.stringify(p.sizes)) : []
-                                  })
-                                }
-                                className="inline-flex items-center gap-1 bg-[#ede8dc] hover:bg-[#4e3828] hover:text-white text-[#3d2b1f] px-3 py-1.5 rounded-lg text-xs font-display uppercase tracking-wider font-bold transition-colors cursor-pointer border border-[#e3ded3]"
-                                title="Open full stock override editor"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Adjust Stock</span>
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    setStockEditModal({
+                                      id: p.id,
+                                      name: p.name,
+                                      sku: p.sku,
+                                      inventoryType: p.inventoryType || 'sizes',
+                                      totalStock: p.totalStock,
+                                      lowStockThreshold: p.lowStockThreshold || 5,
+                                      colors: Array.isArray(p.colors) && p.colors.length > 0
+                                        ? JSON.parse(JSON.stringify(p.colors))
+                                        : [{ name: 'Standard', hex: '#212121', stock: p.totalStock, sizes: p.sizes || [] }],
+                                      sizes: Array.isArray(p.sizes) ? JSON.parse(JSON.stringify(p.sizes)) : []
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 bg-[#ede8dc] hover:bg-[#4e3828] hover:text-white text-[#3d2b1f] px-2.5 py-1.5 rounded-lg text-xs font-display uppercase tracking-wider font-bold transition-colors cursor-pointer border border-[#e3ded3]"
+                                  title="Open full stock override editor"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>Adjust</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(p.id, p.name)}
+                                  className="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer border border-rose-200 shadow-2xs"
+                                  title="Permanently remove product completely"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -2270,17 +2292,19 @@ export default function AdminDashboardPage() {
                                     sizes: Array.isArray(p.sizes) ? JSON.parse(JSON.stringify(p.sizes)) : []
                                   })
                                 }
-                                className="p-1.5 text-gray-500 hover:text-[#3d2b1f] hover:bg-[#ede8dc] rounded-lg transition-colors cursor-pointer"
-                                title="Edit Stock"
+                                className="inline-flex items-center gap-1 bg-[#ede8dc] hover:bg-[#4e3828] hover:text-white text-[#3d2b1f] px-2.5 py-1.5 rounded-lg text-xs font-display uppercase tracking-wider font-bold transition-colors cursor-pointer border border-[#e3ded3]"
+                                title="Adjust Stock"
                               >
-                                <Boxes className="w-4 h-4" />
+                                <Boxes className="w-3.5 h-3.5" />
+                                <span>Stock</span>
                               </button>
                               <button
-                                onClick={() => handleDeleteProduct(p.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete SKU"
+                                onClick={() => handleDeleteProduct(p.id, p.name)}
+                                className="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer border border-rose-200 shadow-2xs"
+                                title="Permanently delete product completely"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Delete</span>
                               </button>
                             </div>
                           </td>
@@ -4948,6 +4972,23 @@ export default function AdminDashboardPage() {
                   className="px-4 py-2.5 border border-[#e3ded3] rounded-xl text-xs font-display uppercase tracking-wider font-bold text-[#6e5d52] hover:text-[#3d2b1f] cursor-pointer"
                 >
                   Cancel
+                </button>
+              </div>
+
+              {/* Danger Zone: Delete SKU completely */}
+              <div className="pt-3.5 mt-2 border-t border-rose-200/80 flex items-center justify-between bg-rose-50/50 p-3 rounded-xl border">
+                <div>
+                  <p className="text-xs font-display uppercase font-bold text-rose-800">Danger Zone</p>
+                  <p className="text-[11px] text-rose-600">Permanently purge SKU, database row &amp; inventory history</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleDeleteProduct(stockEditModal.id, stockEditModal.name)}
+                  className="inline-flex items-center gap-1.5 text-xs font-display uppercase tracking-wider font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Product</span>
                 </button>
               </div>
             </form>
