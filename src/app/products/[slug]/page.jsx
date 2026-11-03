@@ -29,6 +29,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { useStore } from '@/context/StoreContext';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '@/lib/initialData';
 
 export default function ProductDetailPage({ params }) {
   const resolvedParams = use(params);
@@ -42,18 +43,26 @@ export default function ProductDetailPage({ params }) {
     showToast
   } = useStore();
 
-  const [product, setProduct] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialMatch = INITIAL_PRODUCTS.find((p) => p.slug === slug);
+
+  const [product, setProduct] = useState(initialMatch || null);
+  const [relatedProducts, setRelatedProducts] = useState(
+    initialMatch
+      ? INITIAL_PRODUCTS.filter((item) => item.id !== initialMatch.id).slice(0, 4)
+      : []
+  );
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  const [isLoading, setIsLoading] = useState(!initialMatch);
   const [notFound, setNotFound] = useState(false);
 
   // Gallery & Image Viewer State
-  const [activeImage, setActiveImage] = useState('');
+  const [activeImage, setActiveImage] = useState(initialMatch ? initialMatch.primaryImage : '');
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
 
   // Variant Selection State (Product -> Colour -> Size)
-  const [selectedColor, setSelectedColor] = useState('');
+  const initialColors = Array.isArray(initialMatch?.colors) ? initialMatch.colors : [];
+  const initialColorName = initialColors[0]?.name || 'Standard';
+  const [selectedColor, setSelectedColor] = useState(initialColorName);
   const [selectedSize, setSelectedSize] = useState('M');
   const [qty, setQty] = useState(1);
 
@@ -64,12 +73,15 @@ export default function ProductDetailPage({ params }) {
 
   useEffect(() => {
     if (!slug) return;
-    setIsLoading(true);
+    if (!initialMatch) setIsLoading(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
 
     // Fetch single product by slug and store catalog for related pieces
     Promise.all([
-      fetch(`/api/products?slug=${encodeURIComponent(slug)}`),
-      fetch('/api/products')
+      fetch(`/api/products?slug=${encodeURIComponent(slug)}`, { signal: controller.signal }),
+      fetch('/api/products', { signal: controller.signal })
     ])
       .then(async ([prodRes, allRes]) => {
         const prodData = await prodRes.json();
@@ -100,17 +112,25 @@ export default function ProductDetailPage({ params }) {
           const others = (allData.products || []).filter((item) => item.id !== p.id);
           const sameCat = others.filter((item) => item.categorySlug === p.categorySlug);
           setRelatedProducts(sameCat.length > 0 ? sameCat.slice(0, 4) : others.slice(0, 4));
-        } else {
+        } else if (!initialMatch) {
           setNotFound(true);
         }
 
         if (allData.categories) setCategories(allData.categories);
       })
       .catch((err) => {
-        console.error('Error fetching product detail:', err);
-        setNotFound(true);
+        console.warn('Silent product fallback active:', err.message);
+        if (!initialMatch) setNotFound(true);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [slug]);
 
   // Handle switching color: recalculate available sizes for this specific shade
@@ -313,6 +333,8 @@ export default function ProductDetailPage({ params }) {
                     <img
                       src={imgUrl}
                       alt={`${product.name} angle ${idx + 1}`}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover object-center"
                     />
                   </button>
@@ -325,6 +347,9 @@ export default function ProductDetailPage({ params }) {
               <img
                 src={activeImage || product.primaryImage}
                 alt={product.name}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
               />
 

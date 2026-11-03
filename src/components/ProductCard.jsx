@@ -51,6 +51,8 @@ export default function ProductCard({ product }) {
             <img
               src={hovered && product.hoverImage ? product.hoverImage : product.primaryImage}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               className={`w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-500 cursor-pointer ${
                 isSoldOut ? 'filter grayscale-20 brightness-90' : ''
               }`}

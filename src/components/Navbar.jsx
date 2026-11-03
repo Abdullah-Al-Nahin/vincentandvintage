@@ -109,6 +109,10 @@ export default function Navbar({
             <img
               src="/brand/logo.png"
               alt="Vincent & Vintage"
+              width={160}
+              height={52}
+              fetchPriority="high"
+              decoding="async"
               className="h-11 sm:h-13 w-auto object-contain crisp-logo"
             />
           </Link>
@@ -117,9 +121,8 @@ export default function Navbar({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className={`p-2 rounded-full transition-colors ${
-                mobileSearchOpen ? 'bg-[#ede8dc] text-[#a8825b]' : 'text-[#3d2b1f]'
-              }`}
+              className={`p-2 rounded-full transition-colors ${mobileSearchOpen ? 'bg-[#ede8dc] text-[#a8825b]' : 'text-[#3d2b1f]'
+                }`}
               aria-label="Toggle search"
             >
               <Search className="w-5 h-5" />
@@ -189,11 +192,10 @@ export default function Navbar({
                 const el = document.getElementById('catalog-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer ${
-                activeCategory === 'all'
-                  ? 'bg-[#4e3828] text-white shadow-xs'
-                  : 'bg-[#fcfbf7] text-[#554336] border border-[#d8d2c4] hover:border-[#a8825b]'
-              }`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer ${activeCategory === 'all'
+                ? 'bg-[#4e3828] text-white shadow-xs'
+                : 'bg-[#fcfbf7] text-[#554336] border border-[#d8d2c4] hover:border-[#a8825b]'
+                }`}
             >
               All Pieces
             </button>
@@ -205,11 +207,10 @@ export default function Navbar({
                   const el = document.getElementById('catalog-section');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer ${
-                  activeCategory === cat.slug
-                    ? 'bg-[#4e3828] text-white shadow-xs'
-                    : 'bg-[#fcfbf7] text-[#554336] border border-[#d8d2c4] hover:border-[#a8825b]'
-                }`}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-display uppercase tracking-wider font-bold transition-all cursor-pointer ${activeCategory === cat.slug
+                  ? 'bg-[#4e3828] text-white shadow-xs'
+                  : 'bg-[#fcfbf7] text-[#554336] border border-[#d8d2c4] hover:border-[#a8825b]'
+                  }`}
               >
                 {cat.name}
               </button>
@@ -259,6 +260,10 @@ export default function Navbar({
               <img
                 src="/brand/logo.png"
                 alt="Vincent & Vintage Logo"
+                width={320}
+                height={112}
+                fetchPriority="high"
+                decoding="async"
                 className="h-24 lg:h-28 xl:h-32 w-auto max-w-[320px] xl:max-w-[360px] object-contain crisp-logo group-hover:scale-102 transition-transform duration-300 drop-shadow-xs"
               />
             </Link>
@@ -311,11 +316,10 @@ export default function Navbar({
             <li>
               <button
                 onClick={() => onSelectCategory && onSelectCategory('all')}
-                className={`hover:text-[#a8825b] transition-all pb-1 cursor-pointer ${
-                  activeCategory === 'all'
-                    ? 'text-[#a8825b] border-b-2 border-[#a8825b] font-bold'
-                    : ''
-                }`}
+                className={`hover:text-[#a8825b] transition-all pb-1 cursor-pointer ${activeCategory === 'all'
+                  ? 'text-[#a8825b] border-b-2 border-[#a8825b] font-bold'
+                  : ''
+                  }`}
               >
                 ALL COLLECTION
               </button>
@@ -328,11 +332,10 @@ export default function Navbar({
                     const el = document.getElementById('catalog-section');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`hover:text-[#a8825b] transition-all pb-1 cursor-pointer ${
-                    activeCategory === cat.slug
-                      ? 'text-[#a8825b] border-b-2 border-[#a8825b] font-bold'
-                      : ''
-                  }`}
+                  className={`hover:text-[#a8825b] transition-all pb-1 cursor-pointer ${activeCategory === cat.slug
+                    ? 'text-[#a8825b] border-b-2 border-[#a8825b] font-bold'
+                    : ''
+                    }`}
                 >
                   {cat.name}
                 </button>

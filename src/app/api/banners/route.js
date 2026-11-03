@@ -19,23 +19,62 @@ export async function GET(request) {
     const includeInactive = wantsAdmin && verifyAdminSession(request);
 
     if (type === 'hero') {
-      const heroSlides = await getOnlineHeroSlides({ includeInactive });
-      return NextResponse.json({ heroSlides });
+      let heroSlides = await getOnlineHeroSlides({ includeInactive });
+      if (!includeInactive && (!heroSlides || heroSlides.length === 0)) {
+        const { INITIAL_HERO_SLIDES } = await import('@/lib/initialData');
+        heroSlides = INITIAL_HERO_SLIDES;
+      }
+      const res = NextResponse.json({ heroSlides: heroSlides || [] });
+      if (wantsAdmin) {
+        res.headers.set('Cache-Control', 'no-store, no-cache');
+      } else {
+        res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+      }
+      return res;
     }
 
     if (type === 'promo') {
       const promoBlocks = await getOnlinePromoBlocks({ includeInactive });
-      return NextResponse.json({ promoBlocks });
+      const res = NextResponse.json({ promoBlocks: promoBlocks || [] });
+      if (wantsAdmin) {
+        res.headers.set('Cache-Control', 'no-store, no-cache');
+      } else {
+        res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+      }
+      return res;
     }
 
-    const [heroSlides, promoBlocks] = await Promise.all([
+    let [heroSlides, promoBlocks] = await Promise.all([
       getOnlineHeroSlides({ includeInactive }),
       getOnlinePromoBlocks({ includeInactive })
     ]);
 
-    return NextResponse.json({ heroSlides, promoBlocks });
+    if (!includeInactive && (!heroSlides || heroSlides.length === 0)) {
+      const { INITIAL_HERO_SLIDES } = await import('@/lib/initialData');
+      heroSlides = INITIAL_HERO_SLIDES;
+    }
+
+    const res = NextResponse.json({
+      heroSlides: heroSlides || [],
+      promoBlocks: promoBlocks || []
+    });
+
+    if (wantsAdmin) {
+      res.headers.set('Cache-Control', 'no-store, no-cache');
+    } else {
+      res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+      res.headers.set('CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+      res.headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+    }
+
+    return res;
   } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 });
+    try {
+      const { INITIAL_HERO_SLIDES } = await import('@/lib/initialData');
+      return NextResponse.json({ heroSlides: INITIAL_HERO_SLIDES, promoBlocks: [] });
+    } catch {
+      return NextResponse.json({ message: err.message }, { status: 500 });
+    }
   }
 }
 

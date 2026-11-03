@@ -17,29 +17,47 @@ import Navbar from '@/components/Navbar';
 import SectionHeader from '@/components/SectionHeader';
 import ProductCard from '@/components/ProductCard';
 import Footer from '@/components/Footer';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_HERO_SLIDES } from '@/lib/initialData';
 
 export default function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [heroSlides, setHeroSlides] = useState([]);
+  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  const [heroSlides, setHeroSlides] = useState(INITIAL_HERO_SLIDES);
   const [promoBlocks, setPromoBlocks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.products) setProducts(data.products);
-        if (data.categories) setCategories(data.categories);
-        if (data.heroSlides) setHeroSlides(data.heroSlides);
-        if (data.promoBlocks) setPromoBlocks(data.promoBlocks);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
+
+    fetch('/api/products', { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error('Storefront API response not ok');
+        return res.json();
       })
-      .catch((err) => console.error('Error loading storefront data:', err))
-      .finally(() => setIsLoading(false));
+      .then((data) => {
+        if (Array.isArray(data.products) && data.products.length > 0) setProducts(data.products);
+        if (Array.isArray(data.categories) && data.categories.length > 0) setCategories(data.categories);
+        if (Array.isArray(data.heroSlides) && data.heroSlides.length > 0) setHeroSlides(data.heroSlides);
+        if (Array.isArray(data.promoBlocks) && data.promoBlocks.length > 0) setPromoBlocks(data.promoBlocks);
+      })
+      .catch((err) => {
+        // Silently preserve initial snapshot if offline or timeout
+        console.warn('Storefront using fast local snapshot:', err.message);
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   // Autoplay Hero Slider if slides exist
@@ -104,6 +122,9 @@ export default function HomePage() {
                   <img
                     src={slide.image}
                     alt={slide.title}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={index === 0 ? 'high' : 'low'}
                     className="w-full h-full object-cover object-center"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-[#3d2e24]/90 via-[#4e3828]/60 to-transparent flex items-center">
@@ -274,6 +295,8 @@ export default function HomePage() {
                     <img
                       src={cat.cardImage}
                       alt={cat.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#2a1c14]/70 via-transparent to-transparent" />

@@ -12,10 +12,29 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const wantsAdmin = searchParams.get('admin') === 'true' || searchParams.get('all') === 'true';
     const includeInactive = wantsAdmin && verifyAdminSession(request);
-    const categories = await getOnlineCategories({ includeInactive });
-    return NextResponse.json({ categories });
+    let categories = await getOnlineCategories({ includeInactive });
+
+    if (!includeInactive && (!categories || categories.length === 0)) {
+      const { INITIAL_CATEGORIES } = await import('@/lib/initialData');
+      categories = INITIAL_CATEGORIES;
+    }
+
+    const res = NextResponse.json({ categories: categories || [] });
+    if (wantsAdmin) {
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    } else {
+      res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+      res.headers.set('CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+      res.headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+    }
+    return res;
   } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 });
+    try {
+      const { INITIAL_CATEGORIES } = await import('@/lib/initialData');
+      return NextResponse.json({ categories: INITIAL_CATEGORIES });
+    } catch {
+      return NextResponse.json({ message: err.message }, { status: 500 });
+    }
   }
 }
 
